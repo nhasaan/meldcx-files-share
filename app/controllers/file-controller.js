@@ -1,6 +1,9 @@
-const { v4: uuid4 } = require('uuid');
 const catchAsync = require('../utils/catch-async');
-const fileService = require('../services/file');
+const {
+  fileService,
+  localFileService,
+  gcsFileService,
+} = require('../services');
 const AppError = require('../utils/app-error');
 
 const findFile = catchAsync(async (req, res, next) => {
@@ -19,7 +22,6 @@ const findFile = catchAsync(async (req, res, next) => {
 });
 
 const findFiles = catchAsync(async (req, res, next) => {
-
   try {
     const files = await fileService.findFiles({ offset: 10 });
     if (!files) {
@@ -33,15 +35,30 @@ const findFiles = catchAsync(async (req, res, next) => {
 });
 
 const uploadFiles = catchAsync(async (req, res, next) => {
+  const provider = process.env.PROVIDER || 'local';
+  let uploaded;
+
   try {
-    const files = fileService.uploadFiles(req);
-    if(!files) {
+    if (provider === 'local') {
+      uploaded = await localFileService.uploadFiles(req, res, next);
+    }
+    if (provider === 'gcs') {
+      uploaded = await gcsFileService.uploadFiles(req, res, next);
+    }
+
+    if (!uploaded) {
       return next(new AppError('Could not upload files', 500));
     }
-    return res.json(files);
+
+    const filesSaved = await fileService.createFiles(req);
+
+    if(!filesSaved) {
+      return next(new AppError('Uploaded files not saved', 500));
+    }
+    return res.status(201).json(filesSaved);
   } catch (error) {
-    console.log(error);
-    return next(new AppError('Could not upload files', 500));
+    console.log('e: ', error);
+    return next(error);
   }
 });
 
@@ -50,11 +67,11 @@ const removeFile = catchAsync(async (req, res, next) => {
 
   try {
     const file = await fileService.removeFileByKey({ fileKey });
-    
-    if(!file) {
+
+    if (!file) {
       return next(new AppError('Could not find file reference', 404));
     }
-    return res.json({message: 'deleted', status: 'success'})
+    return res.json({ message: 'deleted', status: 'success' });
   } catch (error) {
     console.log(error);
   }

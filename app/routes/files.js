@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const fileController = require('../controllers/file');
+const fileController = require('../controllers/file-controller');
 
 router
   .route('/files')

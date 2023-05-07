@@ -1,13 +1,13 @@
 class AppError extends Error {
-  constructor(message, statuscode, bodystatuscode) {
+  constructor(message, statusCode, bodyStatusCode) {
     super();
     this.message = message;
-    this.statuscode = statuscode;
-    this.status = 'fail';
-    this.isoperational = true;
-    this.bodystatuscode = bodystatuscode || statuscode;
+    this.statusCode = statusCode;
+    this.status = 'FAIL';
+    this.isOperational = true;
+    this.bodyStatusCode = bodyStatusCode || statusCode;
 
-    error.capturestacktrace(this, this.constructor);
+    Error.captureStackTrace(this, this.constructor);
   }
 }
 

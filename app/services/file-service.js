@@ -1,7 +1,6 @@
 const { v4: uuid4 } = require('uuid');
+const fs = require('fs');
 const File = require('../models/file');
-const localFileService = require('./local-file-service');
-const gcsFileService = require('./gcs-file-service');
 
 const createFile = async (req) => {
   const file = new File({
@@ -15,24 +14,23 @@ const createFile = async (req) => {
   return file.save();
 };
 
-const uploadFiles = async (req) => {
+const createFiles = async (req) => {
+  const files = req.files;
   const provider = process.env.PROVIDER || 'local';
 
-  if (provider === 'local') {
-    return uploadFilesToLocal(req);
-  }
-  if (provider === 'gcs') {
-    return uploadFilesToGCS(req);
-  }
-};
+  let filesToSave = [];
 
-const uploadFilesToLocal = (req) => {
-  console.log('upload files to local!');
-  return localFileService.uploadFiles(req);
-};
-const uploadFilesToGCS = (req) => {
-  console.log('upload files to local!');
-  return gcsFileService.sendFiles(req);
+  for (let file of files) {
+    const fileTosave = {
+      filename: file.filename,
+      key: provider === 'local' ? uuid4() : file.fileKey,
+      path: file.path,
+      size: file.size,
+      ip: req.headers['x-real-ip'] || req.connection.remoteAddress,
+    };
+    filesToSave.push(fileTosave);
+  }
+  return File.insertMany(filesToSave);
 };
 
 const findFileByKey = async ({ fileKey }) => {
@@ -40,7 +38,6 @@ const findFileByKey = async ({ fileKey }) => {
     key: fileKey,
   }).exec();
 
-  console.log(file);
   return file;
 };
 
@@ -54,14 +51,16 @@ const removeFileByKey = async ({ fileKey }) => {
     key: fileKey,
   }).exec();
 
-  console.log(file);
+  if(file) {
+    fs.unlinkSync(process.env.FOLDER + '/' + file.filename)
+  }
   return file;
 };
 
 module.exports = {
   createFile,
+  createFiles,
   findFileByKey,
   removeFileByKey,
   findFiles,
-  uploadFiles,
 };

@@ -1,5 +1,5 @@
 const util = require('util');
-const GCS = require('../gcs/');
+const GCS = require('../gcs');
 
 const bucketName = process.env.BUCKET || 'bucket_name';
 const bucket = GCS.bucket(bucketName);
@@ -15,7 +15,7 @@ const { format } = util;
  *   "originalname" and "buffer" as keys
  */
 
-const sendFile = (file) =>
+const uploadFile = async (file) =>
   new Promise((resolve, reject) => {
     const { originalname, buffer } = file;
 
@@ -37,7 +37,7 @@ const sendFile = (file) =>
       .end(buffer);
   });
 
-const sendFiles = (req, res, next) => {
+const uploadFiles = async (req, res, next) => {
   if (!req.files) {
     return next();
   }
@@ -78,4 +78,4 @@ const sendFiles = (req, res, next) => {
   Promise.all(promises).then(() => next());
 };
 
-module.exports = { sendFile, sendFiles };
+module.exports = { uploadFile, uploadFiles };
