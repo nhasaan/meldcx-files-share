@@ -16,7 +16,6 @@ const createFile = async (req) => {
 
 const createFiles = async (req) => {
   const files = req.files;
-  console.log('files: ', files)
   const provider = process.env.PROVIDER || 'local';
 
   let filesToSave = [];
@@ -53,7 +52,16 @@ const removeFileByKey = async ({ fileKey }) => {
   }).exec();
 
   if(file) {
-    fs.unlinkSync(process.env.FOLDER + '/' + file.filename)
+    const filePath = process.env.FOLDER + '/' + file.filename;
+
+    fs.existsSync(filePath, function(exists) {
+      if(exists) {
+          console.log('File exists. Deleting now ...');
+          fs.unlinkSync(filePath);
+      } else {
+          console.log('File not found, so not deleting.');
+      }
+    });
   }
   return file;
 };
