@@ -14,4 +14,5 @@ Steps to run this project
 - Run this below npm commands
 
 `npm i -d`
+
 `npm run dev`
