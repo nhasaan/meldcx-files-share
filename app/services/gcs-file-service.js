@@ -1,5 +1,6 @@
 const util = require('util');
 const GCS = require('../gcs');
+const { uploader } = require('../middlewares');
 
 const bucketName = process.env.BUCKET || 'bucket_name';
 const bucket = GCS.bucket(bucketName);
@@ -38,37 +39,42 @@ const uploadFile = async (file) =>
   });
 
 const uploadFiles = async (req, res, next) => {
+  await uploader.sendFiles(req, res);
+  console.log('f: ', req.files);
+
   if (!req.files) {
     return next();
   }
 
   let promises = [];
   let vals = Object.values(req.files);
+  const files = Object.values(req.files);
+  console.log('v: ', vals);
 
-  for (let f of vals) {
-    const gcsname = Date.now() + f[0].originalname;
-    const file = bucket.file(gcsname);
+  for (let file of files) {
+    const gcsname = Date.now() + file.originalname;
+    const bucketFile = bucket.file(gcsname);
 
-    const stream = file.createWriteStream({
+    const stream = bucketFile.createWriteStream({
       metadata: {
-        contentType: f[0].mimetype,
+        contentType: file.mimetype,
       },
       resumable: false,
     });
 
     stream.on('error', (err) => {
-      f[0].cloudStorageError = err;
+      file.cloudStorageError = err;
       next(err);
     });
 
-    stream.end(f[0].buffer);
+    stream.end(file.buffer);
 
     promises.push(
       new Promise((resolve, reject) => {
         stream.on('finish', () => {
-          f[0].cloudStorageObject = gcsname;
-          file.makePublic().then(() => {
-            f[0].cloudStoragePublicUrl = getPublicUrl(gcsname);
+          file.cloudStorageObject = gcsname;
+          bucketFile.makePublic().then(() => {
+            file.cloudStoragePublicUrl = getPublicUrl(gcsname);
             resolve();
           });
         });

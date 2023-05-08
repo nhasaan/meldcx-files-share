@@ -16,6 +16,7 @@ const createFile = async (req) => {
 
 const createFiles = async (req) => {
   const files = req.files;
+  console.log('files: ', files)
   const provider = process.env.PROVIDER || 'local';
 
   let filesToSave = [];

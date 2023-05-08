@@ -49,11 +49,21 @@ const upload = multer({
   fileFilter,
 });
 
+const uploadGCS = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: parseInt(process.env.MAX_FILE_SIZE_MB) * 1024 * 1024, // 5 MB
+  },
+  fileFilter,
+});
+
 const uploadFile = util.promisify(upload.single('file'));
 const uploadFiles = util.promisify(upload.array('files', parseInt(process.env.MAX_FILE_COUNT) || 5));
+const sendFiles = util.promisify(uploadGCS.array('files', parseInt(process.env.MAX_FILE_COUNT) || 5));
 
 
 module.exports = {
   uploadFile,
   uploadFiles,
+  sendFiles
 };
