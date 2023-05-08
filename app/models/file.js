@@ -15,6 +15,14 @@ const fileSchema = new Schema(
       type: String,
       required: true,
     },
+    size: {
+      type: Number,
+      required: true
+    },
+    ip: {
+      type: String,
+      required: true
+    }
   },
   {
     timestamps: true,
